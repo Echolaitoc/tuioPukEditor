@@ -5,7 +5,8 @@ void ofApp::setup()
 {
 	ofSetFullscreen(true);
     ofEnableSmoothing();
-	ofSetCircleResolution(32);
+	ofSetCircleResolution(128);
+	ofSetLineWidth(40);
 
 	setupGui();
     tuioClient.start(3333);
@@ -26,12 +27,12 @@ void ofApp::update()
 
 	if (tuioChanged && tuioContacts.size() == contactCount->getValue())
 	{
-		pukContacts.clear();
+		activePuk.pukContacts.clear();
 		for (auto tuio : tuioContacts)
 		{
-			pukContacts.push_back(pukContact());
-			pukContacts.back().contact.sid = tuio.sid;
-			pukContacts.back().contact.position = tuio.position;
+			activePuk.pukContacts.push_back(pukContact());
+			activePuk.pukContacts.back().contact.sid = tuio.sid;
+			activePuk.pukContacts.back().contact.position = tuio.position;
 		}
 	}
 
@@ -44,10 +45,12 @@ void ofApp::draw()
 	ofClear(0, 0);
     tuioClient.drawCursors();
 
-	for (auto contact : pukContacts)
+	for (auto contact : activePuk.pukContacts)
 	{
 		contact.draw(contact.intersects(ofPoint(ofGetMouseX(), ofGetMouseY())));
 	}
+
+	activePuk.drawCenter();
 }
 
 //--------------------------------------------------------------
@@ -119,7 +122,7 @@ void ofApp::tuioRemoved(ofxTuioCursor &tuioCursor)
 	tuioChanged = true;
 }
 
-int ofApp::getTuioPointIndex(int sid)
+const int ofApp::getTuioPointIndex(const int sid)
 {
 	int cursorIndex = -1;
 	for (int i = 0; i < tuioContacts.size(); ++i)
@@ -133,12 +136,12 @@ int ofApp::getTuioPointIndex(int sid)
 	return cursorIndex;
 }
 
-int ofApp::getPukContactIndex(int sid)
+const int ofApp::getPukContactIndex(const int sid)
 {
 	int cursorIndex = -1;
-	for (int i = 0; i < pukContacts.size(); ++i)
+	for (int i = 0; i < activePuk.pukContacts.size(); ++i)
 	{
-		if (pukContacts.at(i).contact.sid == sid)
+		if (activePuk.pukContacts.at(i).contact.sid == sid)
 		{
 			cursorIndex = i;
 			break;
@@ -150,7 +153,7 @@ int ofApp::getPukContactIndex(int sid)
 void ofApp::mouseDragged(int x, int y, int button)
 {
 	ofPoint currentMousePosition(x, y);
-	for (auto& contact : pukContacts)
+	for (auto& contact : activePuk.pukContacts)
 	{
 		if (contact.clicked)
 		{
@@ -164,7 +167,7 @@ void ofApp::mouseDragged(int x, int y, int button)
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button)
 {
-	for (auto& contact : pukContacts)
+	for (auto& contact : activePuk.pukContacts)
 	{
 		if (contact.intersects(ofPoint(x, y)))
 		{
@@ -177,7 +180,7 @@ void ofApp::mousePressed(int x, int y, int button)
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button)
 {
-	for (auto& contact : pukContacts)
+	for (auto& contact : activePuk.pukContacts)
 	{
 		contact.clicked = false;
 	}
