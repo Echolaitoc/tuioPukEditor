@@ -32,15 +32,15 @@ private:
 			{
 				ofSetColor(OUTER_COLOR);
 			}
-			ofCircle(contact.position, RADIUS);
+			ofDrawCircle(contact.position, RADIUS);
 			ofSetColor(INNER_COLOR);
-			ofCircle(contact.position, INNER_RADIUS);
+			ofDrawCircle(contact.position, INNER_RADIUS);
 			ofPopStyle();
 		}
 
 		const bool intersects(const ofPoint location)
 		{
-			return contact.position.distanceSquared(location) <= pow(RADIUS, 2);
+			return contact.position.squareDistance(location) <= pow(RADIUS, 2);
 		}
 
 	private:
@@ -66,10 +66,10 @@ private:
 			ofVec2f center = getCenter();
 			ofFill();
 			ofSetColor(CENTER_COLOR);
-			ofCircle(center, CENTER_RADIUS);
+			ofDrawCircle(center, CENTER_RADIUS);
 			ofNoFill();
 			ofSetColor(CIRCLE_COLOR);
-			ofCircle(center, getCenter().distance(pukContacts.at(0).contact.position));
+			ofDrawCircle(center, getCenter().distance(pukContacts.at(0).contact.position));
 			ofPopStyle();
 		}
 
