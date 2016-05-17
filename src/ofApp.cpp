@@ -6,12 +6,22 @@ void ofApp::setup()
 	ofSetFullscreen(true);
     ofEnableSmoothing();
 	ofSetCircleResolution(128);
-	ofSetLineWidth(40);
 
 	setupGui();
     tuioClient.start(3333);
 
 	tuioChanged = false;
+
+	for (int i = 0; i < contactCount->getValue(); ++i)
+	{
+		activePuk.pukContacts.push_back(pukContact());
+		activePuk.pukContacts.back().contact.sid = -1 - i;
+		activePuk.pukContacts.back().contact.position = ofVec2f(ofGetWindowWidth() / 2, ofGetWindowHeight() / 2);
+		activePuk.pukContacts.back().contact.position.x += sin(((float)i / contactCount->getValue()) * 2 * PI) * 300;
+		activePuk.pukContacts.back().contact.position.y += cos(((float)i / contactCount->getValue()) * 2 * PI) * 300;
+	}
+
+	activePuk.recalculate = true;
 
 	ofAddListener(gui->newGUIEvent, this, &ofApp::guiEvent);
 
@@ -37,6 +47,12 @@ void ofApp::update()
 	}
 
 	tuioChanged = false;
+
+	if (activePuk.recalculate)
+	{
+		activePuk.recalculateOrder();
+		activePuk.recalculate = false;
+	}
 }
 
 //--------------------------------------------------------------
@@ -45,12 +61,7 @@ void ofApp::draw()
 	ofClear(0, 0);
     tuioClient.drawCursors();
 
-	for (auto contact : activePuk.pukContacts)
-	{
-		contact.draw(contact.intersects(ofPoint(ofGetMouseX(), ofGetMouseY())));
-	}
-
-	activePuk.drawCenter();
+	activePuk.draw();
 }
 
 //--------------------------------------------------------------
@@ -62,13 +73,16 @@ void ofApp::exit()
 //--------------------------------------------------------------
 void ofApp::setupGui()
 {
-	gui = new ofxUISuperCanvas("TUIO Puk Editor", 0, 0, 200, 110);
+	gui = new ofxUISuperCanvas("TUIO Puk Editor", 0, 0, 200, 150);
 
 	gui->addSpacer();
 	pukFileName = gui->addTextInput("Puk file name: ", "puk.xml");
 	pukFileName->setAutoUnfocus(false);
 
 	contactCount = gui->addIntSlider("Contact points count: ", 2, 10, 3);
+
+	tolerance = gui->addIntSlider("Tolerance: ", 1, 100, 10);
+	gui->addSpacer();
 
 	gui->addLabelButton("Write file", false);
 
@@ -97,6 +111,7 @@ void ofApp::tuioAdded(ofxTuioCursor &tuioCursor)
 	tuioContacts.back().position.set(tuioCursor.getX() * ofGetWidth(), tuioCursor.getY() * ofGetHeight());
 
 	tuioChanged = true;
+	activePuk.recalculate = true;
 }
 
 void ofApp::tuioUpdated(ofxTuioCursor &tuioCursor)
@@ -120,6 +135,7 @@ void ofApp::tuioRemoved(ofxTuioCursor &tuioCursor)
 	}
 
 	tuioChanged = true;
+	activePuk.recalculate = true;
 }
 
 const int ofApp::getTuioPointIndex(const int sid)
@@ -152,12 +168,13 @@ const int ofApp::getPukContactIndex(const int sid)
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button)
 {
-	ofPoint currentMousePosition(x, y);
+	ofVec2f currentMousePosition(x, y);
 	for (auto& contact : activePuk.pukContacts)
 	{
 		if (contact.clicked)
 		{
 			contact.contact.position.set(contact.contact.position + (currentMousePosition - lastMousePosition));
+			activePuk.recalculate = true;
 		}
 	}
 
@@ -169,7 +186,7 @@ void ofApp::mousePressed(int x, int y, int button)
 {
 	for (auto& contact : activePuk.pukContacts)
 	{
-		if (contact.intersects(ofPoint(x, y)))
+		if (contact.intersects(ofVec2f(x, y)))
 		{
 			contact.clicked = true;
 		}
